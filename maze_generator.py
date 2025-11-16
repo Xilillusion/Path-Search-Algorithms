@@ -264,6 +264,7 @@ def print_maze(grid, title="Maze"):
 # Example usage
 if __name__ == "__main__":
     from AStar import A_star, Bi_HS, MM
+    from BFS import BFS, Bi_BFS
     width, height = 15, 15
     start = (0, 0)
     end = (width-1, height-1)
@@ -272,8 +273,8 @@ if __name__ == "__main__":
 
     for gen in gen_maze:
         maze = gen(width, height, start, end)
-        break_wall(maze, prob=0.15)
-        for alg in [A_star, Bi_HS, MM]:
+        break_wall(maze)
+        for alg in [A_star, Bi_HS, MM, BFS, Bi_BFS]:
             path = alg(start, end, maze)
             board = maze.copy()
             if path:
