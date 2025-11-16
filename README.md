@@ -9,3 +9,13 @@ An all-in-one path search algorithms for grid-like maze, including A*, Bi-HS, MM
 `BFS.py`
 - `BFS`: Breadth First Search
 - `Bi_BFS`: Bidirectional BFS
+
+`maze_generator.py`
+- `dfs_maze`
+- `kruskal_maze`
+- `prim_maze`
+- `aldous_broder_maze`
+
+## Acknowledgement
+- CMPUT 455
+- CMPUT 366
