@@ -1,7 +1,7 @@
 import random
 import numpy as np
 
-def _break_wall(grid, prob=0.1):
+def break_wall(grid, prob=0.1):
     x, y = grid.shape
     for i in range(1, x):
         for j in range(1, y):
@@ -263,8 +263,8 @@ def print_maze(grid, title="Maze"):
 
 # Example usage
 if __name__ == "__main__":
-    from AStar import Bi_HS
-    width, height = 21, 21
+    from AStar import A_star, Bi_HS, MM
+    width, height = 15, 15
     start = (0, 0)
     end = (width-1, height-1)
     
@@ -272,9 +272,12 @@ if __name__ == "__main__":
 
     for gen in gen_maze:
         maze = gen(width, height, start, end)
-        _break_wall(maze)
-        path = Bi_HS(start, end, maze)
-        if path:
-          for step in path:
-              maze[step[0]][step[1]] = 2  # Mark path in the maze
-        print_maze(maze, title=gen.__name__)
+        break_wall(maze, prob=0.15)
+        for alg in [A_star, Bi_HS, MM]:
+            path = alg(start, end, maze)
+            board = maze.copy()
+            if path:
+                for step in path:
+                    board[step[0]][step[1]] = 2  # Mark path in the maze
+            print_maze(board, title=f"{gen.__name__} with {alg.__name__}")
+            print("Length of path :", len(path) if path else "No path")

@@ -47,6 +47,10 @@ class PriorityQueue:
         self.len -= 1
         return self.nodes.pop(self.queue.pop(0))
     
+    def peek(self) -> tuple:
+        # Return the node with the lowest f value
+        return self.nodes[self.queue[0]]
+    
     def is_empty(self) -> bool:
         # Check if the priority queue is empty
         return self.len == 0
@@ -147,54 +151,72 @@ def Bi_HS(start: tuple, goal: tuple, board: list) -> list:
     
     closed_f, closed_b = set(), set()
 
+    U = float('inf')
+    meet_f = None
+    meet_b = None
+
     while not open_f.is_empty() and not open_b.is_empty():
+        if open_f.peek().f <= open_b.peek().f:
         # Search forward from start
-        curr_f = open_f.dequeue()
-
-        meeting_point = open_b.get(curr_f.pos)
-        if meeting_point is not None:
-            # Backtrack path from start to meeting point and from meeting point to goal
-            return reconstruct_path(curr_f) + reconstruct_path(meeting_point)[::-1][1:]
-        
-        closed_f.add(curr_f.pos)
-
-        for child in get_children(curr_f.pos, grid):
-            if child in closed_f:
+            curr_node = open_f.dequeue()
+            if curr_node.pos in closed_f:
                 continue
-            
-            g = curr_f.g + c(curr_f.pos, child)
+            closed_f.add(curr_node.pos)
 
-            child_node = open_f.get(child)
-            if child_node is None:
-                open_f.enqueue(Node(child, g, h(goal, child), curr_f))
-            elif g < child_node.g:
-                child_node.update(g, curr_f)
+            meet_node = open_b.get(curr_node.pos)
+            if meet_node is not None:
+                g_total = curr_node.g + meet_node.g
+                if g_total < U:
+                    U = g_total
+                    meet_f = curr_node
+                    meet_b = meet_node
 
-        # Search backward from goal
-        curr_b = open_b.dequeue()
-        
-        meeting_point = open_f.get(curr_b.pos)
-        if meeting_point is not None:
-            # Backtrack path from start to meeting point and from meeting point to goal
-            return reconstruct_path(meeting_point) + reconstruct_path(curr_b)[::-1][1:]
-        
-        closed_b.add(curr_b.pos)
-        
-        for child in get_children(curr_b.pos, grid):
-            if child in closed_b:
+            for child in get_children(curr_node.pos, grid):
+                if child in closed_f:
+                    continue
+                
+                g = curr_node.g + c(curr_node.pos, child)
+
+                child_node = open_f.get(child)
+                if child_node is None:
+                    open_f.enqueue(Node(child, g, h(goal, child), curr_node))
+                elif g < child_node.g:
+                    child_node.update(g, curr_node)
+        else:
+            # Search backward from goal
+            curr_node = open_b.dequeue()
+            if curr_node.pos in closed_b:
                 continue
+            closed_b.add(curr_node.pos)
             
-            g = curr_b.g + c(curr_b.pos, child)
+            meet_node = open_f.get(curr_node.pos)
+            if meet_node is not None:
+                g_total = curr_node.g + meet_node.g
+                if g_total < U:
+                    U = g_total
+                    meet_f = meet_node
+                    meet_b = curr_node
+            
+            for child in get_children(curr_node.pos, grid):
+                if child in closed_b:
+                    continue
+                
+                g = curr_node.g + c(curr_node.pos, child)
 
-            child_node = open_b.get(child)
-            if child_node is None:
-                open_b.enqueue(Node(child, g, h(start, child), curr_b))
-            elif g < child_node.g:
-                child_node.update(g, curr_b)          
+                child_node = open_b.get(child)
+                if child_node is None:
+                    open_b.enqueue(Node(child, g, h(start, child), curr_node))
+                elif g < child_node.g:
+                    child_node.update(g, curr_node)
+        
+        if open_f.peek().f >= U and open_b.peek().f >= U:
+            break
 
+    if U < float('inf'):
+        return reconstruct_path(meet_f) + reconstruct_path(meet_b)[::-1][1:]
     return None
 
-def MM(start: tuple, goal: tuple, board: list) -> list:
+def MM(start: tuple, goal: tuple, board: list, epsilon: int = 0) -> list:
     """Meet-in-the-Middle A* Search Algorithm"""
     grid = Grid(board)
     if grid[start] != 0 or grid[goal] != 0:
@@ -207,73 +229,73 @@ def MM(start: tuple, goal: tuple, board: list) -> list:
     closed_f, closed_b = set(), set()
 
     U = float('inf')
-    meet = None
-
-    def prmin(q: PriorityQueue) -> int:
-        return q.nodes[q.queue[0]].f if not q.is_empty() else int('inf')
+    meet_f = None
+    meet_b = None
     
     def gmin(q: PriorityQueue) -> int:
-        return min(node.g for node in q.nodes.values()) if not q.is_empty() else int('inf')
+        return min(node.g for node in q.nodes.values()) if not q.is_empty() else float('inf')
 
     while not open_f.is_empty() and not open_b.is_empty():
-        fminF = prmin(open_f)
-        fminB = prmin(open_b)
+        fminF = open_f.peek().f
+        fminB = open_b.peek().f
         C = min(fminF, fminB)
         gminF = gmin(open_f)
         gminB = gmin(open_b)
 
-        if U <= max(C, fminF, fminB, gminF + gminB + 0):
+        if U <= max(C, fminF, fminB, gminF + gminB + epsilon):
             break 
         
         if C == fminF:
             # Search forward from start
-            curr_f = open_f.dequeue()
-            if curr_f.pos in closed_f:
+            curr_node = open_f.dequeue()
+            if curr_node.pos in closed_f:
                 continue
-            closed_f.add(curr_f.pos)
+            closed_f.add(curr_node.pos)
 
-            for child in get_children(curr_f.pos, grid):
-                g = curr_f.g + c(curr_f.pos, child)
+            for child in get_children(curr_node.pos, grid):
+                g = curr_node.g + c(curr_node.pos, child)
                 
                 child_node = open_f.get(child)
                 if child_node is None:
-                    open_f.enqueue(Node(child, g, h(child, goal), curr_f))
-                elif g < child_node.g:
-                    child_node.update(g, curr_f)
+                    child_node = Node(child, g, h(child, goal), curr_node)
                     open_f.enqueue(child_node)
+                elif g < child_node.g:
+                    child_node.update(g, curr_node)
                 
-                node_b = open_b.get(child)
-                if node_b is not None:
-                    total_g = g + node_b.g
+                meet_node = open_b.get(child)
+                if meet_node is not None:
+                    total_g = child_node.g + meet_node.g
                     if total_g < U:
                         U = total_g
-                        meet = child
+                        meet_f = child_node
+                        meet_b = meet_node
         else:
             # Search backward from goal
-            curr_b = open_b.dequeue()
-            if curr_b.pos in closed_b:
+            curr_node = open_b.dequeue()
+            if curr_node.pos in closed_b:
                 continue
-            closed_b.add(curr_b.pos)
+            closed_b.add(curr_node.pos)
 
-            for child in get_children(curr_b.pos, grid):
-                g = curr_b.g + c(curr_b.pos, child)
+            for child in get_children(curr_node.pos, grid):
+                g = curr_node.g + c(curr_node.pos, child)
                 
                 child_node = open_b.get(child)
                 if child_node is None:
-                    open_b.enqueue(Node(child, g, h(child, start), curr_b))
-                elif g < child_node.g:
-                    child_node.update(g, curr_b)
+                    child_node = Node(child, g, h(child, start), curr_node)
                     open_b.enqueue(child_node)
+                elif g < child_node.g:
+                    child_node.update(g, curr_node)
                 
                 node_f = open_f.get(child)
                 if node_f is not None:
-                    total_g = g + node_f.g
+                    total_g = child_node.g + node_f.g
                     if total_g < U:
                         U = total_g
-                        meet = child
+                        meet_f = child_node
+                        meet_b = node_f
     
-    if meet is not None:
-        return reconstruct_path(open_f.get(meet)) + reconstruct_path(open_b.get(meet))[1:]
+    if meet_f is not None and meet_b is not None:
+        return reconstruct_path(meet_f) + reconstruct_path(meet_b)[::-1][1:]
 
     return None
 
