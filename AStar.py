@@ -106,22 +106,25 @@ def reconstruct_path(node: Node) -> list:
         node = node.parent
     return path[::-1]
 
-def A_star(start: tuple, goal: tuple, board: list) -> list:
+def A_star(start: tuple, goal: tuple, board: list) -> tuple:
     """A* Search Algorithm"""
     grid = Grid(board)
     if grid[start] != 0 or grid[goal] != 0:
-        return None  # Start or goal is blocked
+        return None, 0  # Start or goal is blocked
 
     open_set = TieBreakingPQ()
     open_set.enqueue(Node(start, 0, h(start, goal)))
     
     closed_set = set()
 
+    nodes_visited = 0
+
     while not open_set.is_empty():
         current = open_set.dequeue()
+        nodes_visited += 1
 
         if current.pos == goal:
-            return reconstruct_path(current)
+            return reconstruct_path(current), nodes_visited
 
         closed_set.add(current.pos)
 
@@ -137,13 +140,13 @@ def A_star(start: tuple, goal: tuple, board: list) -> list:
             elif g < child_node.g:
                 child_node.update(g, current)
 
-    return None
+    return None, nodes_visited
 
-def Bi_HS(start: tuple, goal: tuple, board: list) -> list:
+def Bi_HS(start: tuple, goal: tuple, board: list) -> tuple:
     """Bidirectional Heuristic Search (Bidirectional A*) Search Algorithm"""
     grid = Grid(board)
     if grid[start] != 0 or grid[goal] != 0:
-        return None  # Start or goal is blocked
+        return None, 0  # Start or goal is blocked
 
     open_f, open_b = TieBreakingPQ(), TieBreakingPQ()
     open_f.enqueue(Node(start, 0, h(start, goal)))
@@ -155,10 +158,13 @@ def Bi_HS(start: tuple, goal: tuple, board: list) -> list:
     meet_f = None
     meet_b = None
 
+    nodes_visited = 0
+
     while not open_f.is_empty() and not open_b.is_empty():
         if open_f.peek().f <= open_b.peek().f:
         # Search forward from start
             curr_node = open_f.dequeue()
+            nodes_visited += 1
             if curr_node.pos in closed_f:
                 continue
             closed_f.add(curr_node.pos)
@@ -185,6 +191,7 @@ def Bi_HS(start: tuple, goal: tuple, board: list) -> list:
         else:
             # Search backward from goal
             curr_node = open_b.dequeue()
+            nodes_visited += 1
             if curr_node.pos in closed_b:
                 continue
             closed_b.add(curr_node.pos)
@@ -213,14 +220,14 @@ def Bi_HS(start: tuple, goal: tuple, board: list) -> list:
             break
 
     if U < float('inf'):
-        return reconstruct_path(meet_f) + reconstruct_path(meet_b)[::-1][1:]
-    return None
+        return reconstruct_path(meet_f) + reconstruct_path(meet_b)[::-1][1:], nodes_visited
+    return None, nodes_visited
 
-def MM(start: tuple, goal: tuple, board: list, epsilon: int = 0) -> list:
+def MM(start: tuple, goal: tuple, board: list, epsilon: int = 0) -> tuple:
     """Meet-in-the-Middle A* Search Algorithm"""
     grid = Grid(board)
     if grid[start] != 0 or grid[goal] != 0:
-        return None  # Start or goal is blocked
+        return None, 0  # Start or goal is blocked
 
     open_f, open_b = TieBreakingPQ(), TieBreakingPQ()
     open_f.enqueue(Node(start, 0, h(start, goal)))
@@ -231,6 +238,8 @@ def MM(start: tuple, goal: tuple, board: list, epsilon: int = 0) -> list:
     U = float('inf')
     meet_f = None
     meet_b = None
+
+    nodes_visited = 0
     
     def gmin(q: PriorityQueue) -> int:
         return min(node.g for node in q.nodes.values()) if not q.is_empty() else float('inf')
@@ -248,6 +257,7 @@ def MM(start: tuple, goal: tuple, board: list, epsilon: int = 0) -> list:
         if C == fminF:
             # Search forward from start
             curr_node = open_f.dequeue()
+            nodes_visited += 1
             if curr_node.pos in closed_f:
                 continue
             closed_f.add(curr_node.pos)
@@ -272,6 +282,7 @@ def MM(start: tuple, goal: tuple, board: list, epsilon: int = 0) -> list:
         else:
             # Search backward from goal
             curr_node = open_b.dequeue()
+            nodes_visited += 1
             if curr_node.pos in closed_b:
                 continue
             closed_b.add(curr_node.pos)
@@ -295,9 +306,9 @@ def MM(start: tuple, goal: tuple, board: list, epsilon: int = 0) -> list:
                         meet_b = node_f
     
     if meet_f is not None and meet_b is not None:
-        return reconstruct_path(meet_f) + reconstruct_path(meet_b)[::-1][1:]
+        return reconstruct_path(meet_f) + reconstruct_path(meet_b)[::-1][1:], nodes_visited
 
-    return None
+    return None, nodes_visited
 
 # Example usage
 if __name__ == "__main__":
@@ -312,5 +323,5 @@ if __name__ == "__main__":
     goal = (4, 4)
 
     for func in [A_star, Bi_HS, MM]:
-        path = func(start, goal, board)
-        print(f"Path found by {func.__name__}: {path}")
+        path, nodes = func(start, goal, board)
+        print(f"Path found by {func.__name__}: {path}, Nodes visited: {nodes}")

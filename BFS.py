@@ -30,34 +30,37 @@ def reconstruct_path(visited: dict, current: tuple) -> list:
         current = visited.get(current, None)
     return path[::-1]
 
-def BFS(start: tuple, goal: tuple, board: list) -> list:
+def BFS(start: tuple, goal: tuple, board: list) -> tuple:
     """Breadth-First Search Algorithm"""
     grid = Grid(board)
     if grid[start] != 0 or grid[goal] != 0:
-        return None  # Start or goal is blocked
+        return None, 0  # Start or goal is blocked
 
     queue = []
     queue.append(start)
     visited = {start: None}
+    nodes_visited = 0
 
     while queue:
         current = queue.pop(0)
+        nodes_visited += 1
+        
         if current == goal:
             # Reconstruct path
-            return reconstruct_path(visited, current)
+            return reconstruct_path(visited, current), nodes_visited
 
         for child in get_children(current, grid):
             if child not in visited:
                 visited[child] = current
                 queue.append(child)
 
-    return None
+    return None, nodes_visited
 
-def Bi_BFS(start: tuple, goal: tuple, board: list) -> list:
+def Bi_BFS(start: tuple, goal: tuple, board: list) -> tuple:
     """Bi-Directional Breadth-First Search Algorithm"""
     grid = Grid(board)
     if grid[start] != 0 or grid[goal] != 0:
-        return None  # Start or goal is blocked
+        return None, 0  # Start or goal is blocked
 
     queue_f, queue_b = [], []
     queue_f.append(start)
@@ -65,27 +68,32 @@ def Bi_BFS(start: tuple, goal: tuple, board: list) -> list:
 
     visited_f = {start: None}
     visited_b = {goal: None}
+    nodes_visited = 0
 
     while queue_f and queue_b:
         # Forward search
         current_f = queue_f.pop(0)
+        nodes_visited += 1
+        
         for child in get_children(current_f, grid):
             if child not in visited_f:
                 visited_f[child] = current_f
                 queue_f.append(child)
                 if child in visited_b:
-                    return reconstruct_path(visited_f, child) + reconstruct_path(visited_b, child)[:-1][::-1]
+                    return reconstruct_path(visited_f, child) + reconstruct_path(visited_b, child)[:-1][::-1], nodes_visited
 
         # Backward search
         current_b = queue_b.pop(0)
+        nodes_visited += 1
+        
         for child in get_children(current_b, grid):
             if child not in visited_b:
                 visited_b[child] = current_b
                 queue_b.append(child)
                 if child in visited_f:
-                    return reconstruct_path(visited_f, child) + reconstruct_path(visited_b, child)[:-1][::-1]
+                    return reconstruct_path(visited_f, child) + reconstruct_path(visited_b, child)[:-1][::-1], nodes_visited
 
-    return None
+    return None, nodes_visited
 
 # Example usage
 if __name__ == "__main__":
@@ -100,5 +108,5 @@ if __name__ == "__main__":
     goal = (4, 4)
 
     for func in [BFS, Bi_BFS]:
-        path = func(start, goal, board)
-        print(f"Path found by {func.__name__}: {path}")
+        path, nodes = func(start, goal, board)
+        print(f"Path found by {func.__name__}: {path}, Nodes visited: {nodes}")

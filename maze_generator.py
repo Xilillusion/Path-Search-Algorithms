@@ -263,22 +263,18 @@ def print_maze(grid, title="Maze"):
 
 # Example usage
 if __name__ == "__main__":
-    from AStar import A_star, Bi_HS, MM
-    from BFS import BFS, Bi_BFS
-    width, height = 15, 15
+    from AStar import A_star
+    width, height = 31, 31
     start = (0, 0)
     end = (width-1, height-1)
-    
-    gen_maze = [dfs_maze, kruskal_maze, prim_maze, aldous_broder_maze]
 
-    for gen in gen_maze:
+    for gen in [dfs_maze, kruskal_maze, prim_maze, aldous_broder_maze]:
         maze = gen(width, height, start, end)
         break_wall(maze)
-        for alg in [A_star, Bi_HS, MM, BFS, Bi_BFS]:
-            path = alg(start, end, maze)
-            board = maze.copy()
-            if path:
-                for step in path:
-                    board[step[0]][step[1]] = 2  # Mark path in the maze
-            print_maze(board, title=f"{gen.__name__} with {alg.__name__}")
-            print("Length of path :", len(path) if path else "No path")
+        path, _ = A_star(start, end, maze)
+        if path:
+            for step in path:
+                maze[step[0]][step[1]] = 2  # Mark path in the maze
+        print_maze(maze, title=f"{gen.__name__} Maze")
+
+            
