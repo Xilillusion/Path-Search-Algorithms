@@ -276,5 +276,3 @@ if __name__ == "__main__":
             for step in path:
                 maze[step[0]][step[1]] = 2  # Mark path in the maze
         print_maze(maze, title=f"{gen.__name__} Maze")
-
-            
